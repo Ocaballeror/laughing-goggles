@@ -1,5 +1,0 @@
-#Simple text file that stores the name of a few hardware interfaces for later use
-#It should not be modified manually unless the scripts can't figure out these name themselves
-
-wlan: wlp3s0
-touchpad: FocalTechPS/2 FocalTech FocalTech Touchpad
