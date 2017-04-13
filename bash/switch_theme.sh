@@ -63,7 +63,7 @@ else
 	echo "Could not find configuration file for urxvt" >&2
 fi
 
-if [ -f "$conffile" ] && $light; then
+if [ -f "$conffile" ]; then
 	if grep -i 'URxvt\*background:.*' "$conffile" >/dev/null 2>&1; then
 		$light &&\
 			sed -i 's/^URxvt\*background:.*/URxvt*background: white/I' "$conffile" ||\
