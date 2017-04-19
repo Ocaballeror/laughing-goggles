@@ -51,7 +51,7 @@ else
 	light=false
 	echo "Setting dark theme"
 	export LIGHT_THEME=""
-	sed -i '/^export LIGHT_THEME=.*/d' "$conffile"
+	sed -i 's/^export LIGHT_THEME=.*/export LIGHT_THEME=""/' "$conffile"
 fi
 
 #URxvt
@@ -108,14 +108,14 @@ vim --serverlist |\
 		vim --servername "$server" --remote-send '<Esc>:call ColorChange()<CR>'
 	done
 
-	# CMUS
-	if hash cmus 2>/dev/null; then
-		# If cmus is running...
-		if cmus-remote -Q >/dev/null 2>&1; then
-			if $light; then
-				cmus-remote -C "colorscheme tension-light"
-			else
-				cmus-remote -C "colorscheme gems"
-			fi
+# CMUS
+if hash cmus 2>/dev/null; then
+	# If cmus is running...
+	if cmus-remote -Q >/dev/null 2>&1; then
+		if $light; then
+			cmus-remote -C "colorscheme tension-light"
+		else
+			cmus-remote -C "colorscheme gems"
 		fi
 	fi
+fi
