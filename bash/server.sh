@@ -35,11 +35,11 @@ fi
 # Default options
 port=$DEFPORT
 browser=$DEFBROWSER
-silent=0 # (-s)
-nothing=0 # (-n)
-moved=0 # (-d)
-precise=0 # (-j)
-newPort=0 # (-p)
+silent=false # (-s)
+nothing=false # (-n)
+moved=false # (-d)
+precise=false # (-j)
+newPort=false # (-p)
 
 #And some global variables, because why not
 recursive=0 #Check if start is being called recursively
@@ -48,31 +48,31 @@ recursive=0 #Check if start is being called recursively
 start(){
 
 	if [ "$(ps aux | grep "$1" | grep -v grep)" ]; then
-		if [ $silent = 0 ] && [ $recursive = 0 ]; then
+		if ! ($silent || $recursive); then
 			echo "A server is already started in port $port"
 		fi
 
-		[ $precise = 1 ] && return 0
+		$precise && return 0
 
 		# Change the port in our command to the next one, 
 		# then recursively call start to check again
 		port=$(($port + 1))
 		command="$DEFCOMMAND $port"
-		recursive=1 #Indicate we are calling recursively to avoid too much output
+		recursive=true #Indicate we are calling recursively to avoid too much output
 		start "$command"
 		return
 	fi
 
-	recursive=0
+	recursive=false
 
-	if [ $silent = 0 ]; then
+	if ! $silent; then
 		echo "Starting server on 0.0.0.0:$port"
 	fi
 	
 	# Command should now have the specified port
 	$command > /dev/null 2> /dev/null &
 	
-	if [ $nothing = 0 ]; then
+	if ! $nothing; then
 		$browser 0.0.0.0:$port > /dev/null 2> /dev/null &
 	fi
 }
@@ -80,7 +80,7 @@ start(){
 # Receives the command used to start a server as a parameter
 stop(){
 
-	if [ $newPort = 0 ]; then
+	if ! $newPort; then
 		#This should get the last server added to the ps aux list
 		process=$(echo "$(ps aux | grep -v grep | grep -E "$DEFCOMMAND {0,1}[0-9]*")"| tail -1)
 		#if ! [ "$process" ] && [ $newPort = 0 ]; then
@@ -91,14 +91,14 @@ stop(){
 	else
 		process="$(ps aux | grep "$1" | grep -v grep)"
 		if ! [ "$process" ]; then
-			if [ $silent = 0 ] && [ $newPort = 1 ]; then
+			if $newPort && ! $silent; then
 				>&2 echo "Err: There's not a server running on this port."
 			fi	
 			return 1
 		fi
 	fi
 
-	if [ $silent = 0 ]; then
+	if ! $silent; then
 		#echo Killing process \#$(echo "$process" | grep -Eo "[0-9]{1,}" | head -1)
 		
 		#Get the last word of our process, which should theoretically be the port number
@@ -121,9 +121,9 @@ restart(){
 	# Store current silent value for later
 	oldSilent=$silent
 	# Avoid stopping messages. Ain't nobody got time for that
-	silent=1
+	silent=true
 	stop "$1"
-	if [ $? != 0 ] && [ $oldSilent == 0 ]; then
+	if [ $? != 0 ] && ! $oldSilent; then
 		echo "No server was running on port $port. But I'll start it anyway"
 	fi
 	silent=$oldSilent
@@ -153,7 +153,7 @@ list(){
 }
 
 browse(){
-	if [ $newPort = 0 ] && [ $(list | wc -l) -gt 1 ]; then
+	if ! $newPort && [ $(list | wc -l) -gt 1 ]; then
 		2>& echo "Err: There's more than one server running and no port was specified(-p)"
 		exit 2
 	fi
@@ -184,7 +184,7 @@ ACTIONS:
 
 
 parse(){
-	while getopts ":p:b:d:jnsh" opt; do
+	while getopts ":p:b:d:jnsh" opt; do #Initial colon activates silent mode
 	 	case $opt in
 		p)
 			port=$OPTARG
@@ -192,7 +192,7 @@ parse(){
 				>&2 echo "Err: Port number must be greater than 1023"
 				exit 3
 			fi
-			newPort=1;;
+			newPort=true;;
 		b)
 			browser=$OPTARG
 			if ! hash $browser 2> /dev/null; then
@@ -205,23 +205,23 @@ parse(){
 		  		exit 1
 			else
 				oldDir=$(pwd)
-				moved=1
+				moved=true
 				cd $OPTARG
 			fi;;
 		j)
-			precise=1;;
+			precise=true;;
 		s)
-			silent=1;;
+			silent=true;;
 		n)
-			nothing=1;;
+			nothing=true;;
 		h)
 			usage
 			exit 0;;
-		\?)
+		\?) #Option doesn't exist
 			>&2 echo "Err: Invalid option: -$OPTARG"
 			usage
 			exit 1;;
-		:)
+		:) #Argument missing
 			>&2 echo "Err: Option -$OPTARG requires an argument."
 			exit 1;;
 		esac
@@ -271,7 +271,7 @@ esac
 # Call the argument parser while ignoring other actions
 while [ $# -gt 0 ]; do
 	parse $*
-	shift 1
+	shift
 done
 
 
@@ -286,7 +286,7 @@ command="$DEFCOMMAND $port"
 eval "$action" "$command"
 
 
-if [ $moved = 1 ] && [ -d $oldDir ]; then
+if [ -d $oldDir ] && $moved; then
 #Could use 'cd -' but this is easier to track and manipulate (in case it's ever needed)
 	cd $oldDir 
 fi
