@@ -44,14 +44,22 @@ esac
 
 if [ -z $LIGHT_THEME ]; then
 	light=true
-	echo "Setting light theme"
-	export -p LIGHT_THEME="true"
-	echo "export LIGHT_THEME=true" >> "$conffile"
+	printf "Setting light theme"
+	export LIGHT_THEME=true
+	if grep -q "LIGHT_THEME" "$conffile"; then
+		sed -i 's/^export LIGHT_THEME=.*$/export LIGHT_THEME=true/' "$conffile"
+	else
+		echo 'export LIGHT_THEME=true' >> "$conffile"
+	fi
 else
 	light=false
-	echo "Setting dark theme"
+	printf "Setting dark theme"
 	export LIGHT_THEME=""
-	sed -i 's/^export LIGHT_THEME=.*/export LIGHT_THEME=""/' "$conffile"
+	if grep -q "LIGHT_THEME" "$conffile"; then
+		sed -i 's/^export LIGHT_THEME=.*$/export LIGHT_THEME=""/' "$conffile"
+	else
+		echo 'export LIGHT_THEME=true' >> "$conffile"
+	fi
 fi
 
 #URxvt
@@ -117,5 +125,15 @@ if hash cmus 2>/dev/null; then
 		else
 			cmus-remote -C "colorscheme gems"
 		fi
+	fi
+fi
+
+# EMACS
+# Make sure server mode is enabled in the config with (server-mode 1) or (start-server)
+if hash emacs 2>/dev/null; then
+	if $light; then
+		emacsclient -e "(load-theme 'adwaita t)" >/dev/null 2>&1
+	else
+		emacsclient -e "(load-theme 'misterioso t)" >/dev/null 2>&1
 	fi
 fi
