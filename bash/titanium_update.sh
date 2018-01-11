@@ -1,7 +1,24 @@
 #!/bin/bash
 #
 # titanium_update.sh
-# Pull the latest titanium backups and update our local backup folder
+# This script is used to synchronize the titanium backups on my phone with my computer.
+# I store the current, most recent backups in a folder called 'Current' and old backups
+# of apps I deleted in another one called 'Deleted'. This script pulls all the backups from
+# the phone through ADB, then compares every file to the ones stored locally.
+# 
+# The pulled backups that correspond to new apps or newer versions of existing ones are kept,
+# while the ones that have been superseeded are deleted. The local backups that don't have a
+# new one to superseed them are assumed to be deleted apps, and are thus sent to the deleted 
+# folder.
+
+_exit() {
+	if [ -d "$tmp" ]; then
+		mv "$tmp"/* "$bkpath/Current"
+		rmdir "$tmp"
+	fi
+
+	exit 127
+}
 
 # First check that we have available ADB devices
 hash adb 2>/dev/null || { echo "Err: ADB is not installed"; exit 3; }
