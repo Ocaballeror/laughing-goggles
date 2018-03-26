@@ -111,10 +111,12 @@ done
 # Vim already has the scheme changing in its config file, but this will change it for all the 
 # current running instances (provided you launched them as servers, for which there's an alias
 # in my bash config)
-vim --serverlist |\
-	while read server; do
-		vim --servername "$server" --remote-send '<Esc>:call ColorChange()<CR>'
-	done
+if hash vim 2>/dev/null && vim --version | grep '+clientserver'; then
+	vim --serverlist |\
+		while read -r server; do
+			vim --servername "$server" --remote-send '<Esc>:call ColorChange()<CR>'
+		done
+fi
 
 # CMUS
 if hash cmus 2>/dev/null; then
